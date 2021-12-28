@@ -108,21 +108,20 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 //
 // This plugin is based on Photonstorms Phaser 3 plugin template with added support for ES6.
-// 
+//
 
 var AnimatedTiles = function (_Phaser$Plugins$Scene) {
     _inherits(AnimatedTiles, _Phaser$Plugins$Scene);
 
     /*
-     TODO: 
+     TODO:
     1. Fix property names which is a mess after adding support for multiple maps, tilesets and layers.
     2. Helper functions: Get mapIndex by passing a map (and maybe support it as argument to methods), Get layerIndex, get tile index from properties.
-    
-    */
+     */
     function AnimatedTiles(scene, pluginManager) {
         _classCallCheck(this, AnimatedTiles);
 
-        // TileMap the plugin belong to. 
+        // TileMap the plugin belong to.
         // TODO: Array or object for multiple tilemaps support
         // TODO: reference to layers too, and which is activated or not
         var _this = _possibleConstructorReturn(this, (AnimatedTiles.__proto__ || Object.getPrototypeOf(AnimatedTiles)).call(this, scene, pluginManager));
@@ -362,7 +361,10 @@ var AnimatedTiles = function (_Phaser$Plugins$Scene) {
 
     }, {
         key: 'shutdown',
-        value: function shutdown() {}
+        value: function shutdown() {
+            // dercetech@github: this fixes a memory leak; a ref to all tiles in a scene would be retained in spite of switching scenes.
+            this.animatedTiles.length = 0;
+        }
 
         //  Called when a Scene is destroyed by the Scene Manager. There is no coming back from a destroyed Scene, so clear up all resources here.
 
@@ -405,23 +407,31 @@ var AnimatedTiles = function (_Phaser$Plugins$Scene) {
                         });
                         // time until jumping to next frame
                         animatedTileData.next = animatedTileData.frames[0].duration;
+                        // set correct currentFrame if animation starts with different tile than the one with animation flag
+                        animatedTileData.currentFrame = animatedTileData.frames.findIndex(function (f) {
+                            return f.tileid === index + tileset.firstgid;
+                        });
                         // Go through all layers for tiles
                         map.layers.forEach(function (layer) {
-                            if (layer.tilemapLayer.type === "StaticTilemapLayer") {
-                                // We just push an empty array if the layer is static (impossible to animate). 
-                                // If we just skip the layer, the layer order will be messed up
-                                // when updating animated tiles and things will look awful.
-                                animatedTileData.tiles.push([]);
-                                return;
+                            //In newer version of phaser there is only one type of layer, so checking for static is breaking the plugin
+                            if (layer.tilemapLayer && layer.tilemapLayer.type) {
+                                if (layer.tilemapLayer.type === "StaticTilemapLayer") {
+                                    // We just push an empty array if the layer is static (impossible to animate).
+                                    // If we just skip the layer, the layer order will be messed up
+                                    // when updating animated tiles and things will look awful.
+                                    animatedTileData.tiles.push([]);
+                                    return;
+                                }
                             }
+
                             // tiles array for current layer
                             var tiles = [];
                             // loop through all rows with tiles...
                             layer.data.forEach(function (tileRow) {
                                 // ...and loop through all tiles in that row
                                 tileRow.forEach(function (tile) {
-                                    // Tiled start index for tiles with 1 but animation with 0. Thus that wierd "-1"                                                    
-                                    if (tile.index - tileset.firstgid === index) {
+                                    // Tiled start index for tiles with 1 but animation with 0. Thus that wierd "-1"
+                                    if (tile && tile.index - tileset.firstgid === index) {
                                         tiles.push(tile);
                                     }
                                 });
@@ -451,7 +461,7 @@ var AnimatedTiles = function (_Phaser$Plugins$Scene) {
     }, {
         key: 'updateAnimatedTiles',
         value: function updateAnimatedTiles() {
-            // future args: x=null, y=null, w=null, h=null, container=null 
+            // future args: x=null, y=null, w=null, h=null, container=null
             var x = null,
                 y = null,
                 w = null,
@@ -477,7 +487,8 @@ var AnimatedTiles = function (_Phaser$Plugins$Scene) {
                 mapAnimData.animatedTiles.forEach(function (tileAnimData) {
                     tileAnimData.tiles.forEach(function (tiles, layerIndex) {
                         var layer = mapAnimData.map.layers[layerIndex];
-                        if (layer.type === "StaticTilemapLayer") {
+                        //In newer version of phaser there is only one type of layer, so checking for static is breaking the plugin
+                        if (layer.type && layer.type === "StaticTilemapLayer") {
                             return;
                         }
                         for (var _x9 = chkX; _x9 < chkX + chkW; _x9++) {
