@@ -18,9 +18,9 @@ export default class Demo extends Phaser.Scene {
         let tileset = map.addTilesetImage('tiles', 'tiles');
         let tileset2 = map.addTilesetImage('super-mario-16bit', 'super-mario-16bit');
         // Add first maps three layers with corresponing tilesets (the third having a tileset of it's own)
-        let layer1 = map.createDynamicLayer('ground', tileset, 0, 0);
-        let layer2 = map.createDynamicLayer('aboveGround', tileset, 0, 0);
-        let layer3 = map.createDynamicLayer('another', tileset2, 0, 0);
+        let layer1 = map.createLayer('ground', tileset, 0, 0);
+        let layer2 = map.createLayer('aboveGround', tileset, 0, 0);
+        let layer3 = map.createLayer('another', tileset2, 0, 0);
         // Init animations on map
         this.animatedTiles.init(map);
 
@@ -28,7 +28,7 @@ export default class Demo extends Phaser.Scene {
         let map2 = this.make.tilemap({
             key: 'map2'
         });
-        let map2layer = map2.createDynamicLayer('ground', tileset, 160, 0);
+        let map2layer = map2.createLayer('ground', tileset, 160, 0);
         this.animatedTiles.init(map2);
 
         // start dat.gui
@@ -45,7 +45,7 @@ export default class Demo extends Phaser.Scene {
             // Need to tell the plugin about the new tiles.
             // ATM it will go through all tilemaps and layers,
             // but I'll add support for limiting the task to
-            // maps, layers and areas within that. 
+            // maps, layers and areas within that.
             this.animatedTiles.updateAnimatedTiles();
             // Ok. don't hammer tiles on each update-loop. the change is done.
             this.changed = true;
